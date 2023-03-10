@@ -6,43 +6,42 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.navArgs
 import com.example.githubsearchwithnavigation.R
 import com.example.githubsearchwithnavigation.data.GitHubRepo
 import com.google.android.material.snackbar.Snackbar
 
 const val EXTRA_GITHUB_REPO = "GITHUB_REPO"
 
-class RepoDetailActivity : AppCompatActivity() {
-    private var repo: GitHubRepo? = null
+class RepoDetailFragment : Fragment(R.layout.repo_detail_fragment) {
+    private val args: RepoDetailFragmentArgs by navArgs()
+
     private var isBookmarked = false
 
     private val viewModel: BookmarkedReposViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_repo_detail)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        /*
-         * If an intent was used to launch this activity and it contains information about a
-         * GitHub repo, use that information to populate the UI.
-         */
-        if (intent != null && intent.hasExtra(EXTRA_GITHUB_REPO)) {
-            repo = intent.getSerializableExtra(EXTRA_GITHUB_REPO) as GitHubRepo
+        setHasOptionsMenu(true)
 
-            findViewById<TextView>(R.id.tv_repo_name).text = repo!!.name
-            findViewById<TextView>(R.id.tv_repo_stars).text = repo!!.stars.toString()
-            findViewById<TextView>(R.id.tv_repo_description).text = repo!!.description
-        }
+        view.findViewById<TextView>(R.id.tv_repo_name).text = args.repo.name
+        view.findViewById<TextView>(R.id.tv_repo_stars).text = args.repo.stars.toString()
+        view.findViewById<TextView>(R.id.tv_repo_description).text = args.repo.description
     }
 
     /**
      * This method adds a custom menu to the action bar for this activity.
      */
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.activity_repo_detail, menu)
 
         /*
@@ -53,14 +52,14 @@ class RepoDetailActivity : AppCompatActivity() {
          * If the repo is in the database, update the bookmark icon to reflect that the repo
          * is bookmarked.
          */
-        val bookmarkItem = menu?.findItem(R.id.action_bookmark)
-        viewModel.getBookmarkedRepoByName(repo!!.name).observe(this) { bookmarkedRepo ->
+        val bookmarkItem = menu.findItem(R.id.action_bookmark)
+        viewModel.getBookmarkedRepoByName(args.repo.name).observe(viewLifecycleOwner) { bookmarkedRepo ->
             when (bookmarkedRepo) {
                 null -> {
                     isBookmarked = false
                     bookmarkItem?.isChecked = false
                     bookmarkItem?.icon = AppCompatResources.getDrawable(
-                        this,
+                        requireContext(),
                         R.drawable.ic_action_bookmark_off
                     )
                 }
@@ -68,13 +67,12 @@ class RepoDetailActivity : AppCompatActivity() {
                     isBookmarked = true
                     bookmarkItem?.isChecked = true
                     bookmarkItem?.icon = AppCompatResources.getDrawable(
-                        this,
+                        requireContext(),
                         R.drawable.ic_action_bookmark_on
                     )
                 }
             }
         }
-        return true
     }
 
     /**
@@ -105,11 +103,9 @@ class RepoDetailActivity : AppCompatActivity() {
      * to reflect whether the repo is bookmarked or not.
      */
     private fun toggleRepoBookmark(menuItem: MenuItem) {
-        if (repo != null) {
-            when (isBookmarked) {
-                false -> viewModel.addBookmarkedRepo(repo!!)
-                true ->  viewModel.removeBookmarkedRepo(repo!!)
-            }
+        when (isBookmarked) {
+            false -> viewModel.addBookmarkedRepo(args.repo)
+            true ->  viewModel.removeBookmarkedRepo(args.repo)
         }
     }
 
@@ -118,24 +114,22 @@ class RepoDetailActivity : AppCompatActivity() {
      * repo on github.com using the URL associated with the repo.
      */
     private fun viewRepoOnWeb() {
-        if (repo != null) {
-            val intent = Uri.parse(repo!!.url).let {
-                Intent(Intent.ACTION_VIEW, it)
-            }
+        val intent = Uri.parse(args.repo.url).let {
+            Intent(Intent.ACTION_VIEW, it)
+        }
 
-            /*
-             * Make sure the device has an appropriate app to handle the implicit intent.  If it
-             * doesn't, display an error message in a Snackbar.
-             */
-            try {
-                startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                Snackbar.make(
-                    findViewById(R.id.coordinator_layout),
-                    R.string.action_view_on_web_error,
-                    Snackbar.LENGTH_LONG
-                ).show()
-            }
+        /*
+         * Make sure the device has an appropriate app to handle the implicit intent.  If it
+         * doesn't, display an error message in a Snackbar.
+         */
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Snackbar.make(
+                requireView(),
+                R.string.action_view_on_web_error,
+                Snackbar.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -144,8 +138,7 @@ class RepoDetailActivity : AppCompatActivity() {
      * current GitHub repo.
      */
     private fun shareRepo() {
-        if (repo != null) {
-            val text = getString(R.string.share_text, repo!!.name, repo!!.url)
+            val text = getString(R.string.share_text, args.repo.name, args.repo.url)
             val intent: Intent = Intent().apply {
                 action = Intent.ACTION_SEND
                 putExtra(Intent.EXTRA_TEXT, text)
@@ -153,5 +146,4 @@ class RepoDetailActivity : AppCompatActivity() {
             }
             startActivity(Intent.createChooser(intent, null))
         }
-    }
 }

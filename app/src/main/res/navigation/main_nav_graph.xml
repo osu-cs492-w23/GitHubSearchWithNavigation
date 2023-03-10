@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/github_search">
+
+    <fragment
+        android:id="@+id/github_search"
+        android:name="com.example.githubsearchwithnavigation.ui.GitHubSearchFragment"
+        android:label="@string/label_github_search">
+        <action
+            android:id="@+id/navigate_to_repo_detail"
+            app:destination="@id/repo_detail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/repo_detail"
+        android:name="com.example.githubsearchwithnavigation.ui.RepoDetailFragment"
+        android:label="@string/label_repo_detail">
+        <argument
+            android:name="repo"
+            app:argType="com.example.githubsearchwithnavigation.data.GitHubRepo" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookmarked_repos"
+        android:name="com.example.githubsearchwithnavigation.ui.BookmarkedReposFragment"
+        android:label="@string/label_bookmarked_repos">
+        <action
+            android:id="@+id/navigate_to_repo_detail"
+            app:destination="@id/repo_detail" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settings"
+        android:name="com.example.githubsearchwithnavigation.ui.SettingsFragment"
+        android:label="@string/label_settings" />
+
+</navigation>

@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -120,5 +121,7 @@ class GitHubSearchFragment: Fragment(R.layout.github_search_fragment) {
      */
     private fun onGitHubRepoClick(repo: GitHubRepo) {
         Log.d(TAG, "onGitHubRepoClick() called, repo: $repo")
+        val directions = GitHubSearchFragmentDirections.navigateToRepoDetail(repo)
+        findNavController().navigate(directions)
     }
 }
