@@ -27,6 +27,7 @@ import com.example.githubsearchwithnavigation.data.GitHubRepo
 import com.example.githubsearchwithnavigation.data.LoadingStatus
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfig: AppBarConfiguration
@@ -45,11 +46,38 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfig)
 
         findViewById<NavigationView>(R.id.nav_view)?.setupWithNavController(navController)
+
+        addEntriesToDrawer()
+        addEntriesToDrawer()
     }
 
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp(appBarConfig)
                 || super.onSupportNavigateUp()
+    }
+
+    private fun addEntriesToDrawer() {
+        val drawerEntries = listOf(
+            "Entry 1",
+            "Entry 2",
+            "Entry 3",
+            "Entry 4",
+            "Entry 5"
+        )
+
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val entriesSubMenu = navView.menu.findItem(R.id.submenu_item).subMenu
+        entriesSubMenu?.clear()
+        for (entry in drawerEntries) {
+            entriesSubMenu?.add(entry)?.setOnMenuItemClickListener {
+                Snackbar.make(
+                    navView,
+                    "$entry was clicked",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                true
+            }
+        }
     }
 }

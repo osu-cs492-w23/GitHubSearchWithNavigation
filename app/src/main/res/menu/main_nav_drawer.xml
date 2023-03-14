@@ -8,4 +8,9 @@
         android:id="@+id/settings"
         android:title="@string/label_settings"
         android:icon="@drawable/ic_action_settings" />
+    <item
+        android:id="@+id/submenu_item"
+        android:title="Submenu">
+        <menu></menu>
+    </item>
 </menu>
