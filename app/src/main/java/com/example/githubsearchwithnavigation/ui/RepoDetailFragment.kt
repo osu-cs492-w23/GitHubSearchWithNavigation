@@ -1,19 +1,29 @@
 package com.example.githubsearchwithnavigation.ui
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.NavDeepLinkBuilder
 import androidx.navigation.fragment.navArgs
 import com.example.githubsearchwithnavigation.R
 import com.example.githubsearchwithnavigation.data.GitHubRepo
@@ -25,6 +35,13 @@ class RepoDetailFragment : Fragment(R.layout.repo_detail_fragment) {
     private val args: RepoDetailFragmentArgs by navArgs()
 
     private var isBookmarked = false
+    private val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            Log.d("RepoDetailFragment", "Thanks!")
+        } else {
+            Log.d("RepoDetailFragment", "Permission not granted")
+        }
+    }
 
     private val viewModel: BookmarkedReposViewModel by viewModels()
 
@@ -36,6 +53,8 @@ class RepoDetailFragment : Fragment(R.layout.repo_detail_fragment) {
         view.findViewById<TextView>(R.id.tv_repo_name).text = args.repo.name
         view.findViewById<TextView>(R.id.tv_repo_stars).text = args.repo.stars.toString()
         view.findViewById<TextView>(R.id.tv_repo_description).text = args.repo.description
+
+
     }
 
     /**
@@ -104,9 +123,47 @@ class RepoDetailFragment : Fragment(R.layout.repo_detail_fragment) {
      */
     private fun toggleRepoBookmark(menuItem: MenuItem) {
         when (isBookmarked) {
-            false -> viewModel.addBookmarkedRepo(args.repo)
+            false -> {
+                viewModel.addBookmarkedRepo(args.repo)
+                sendNotification(args.repo)
+            }
             true ->  viewModel.removeBookmarkedRepo(args.repo)
         }
+    }
+
+    private fun sendNotification(repo: GitHubRepo) {
+        val builder = NotificationCompat.Builder(
+            requireContext(),
+            getString(R.string.notification_channel)
+        )
+        builder.setSmallIcon(R.drawable.ic_launcher_foreground)
+        builder.setContentTitle(
+            getString(R.string.notification_bookmark_title, repo.name)
+        )
+        builder.setContentText(
+            getString(R.string.notification_bookmark_text, repo.name)
+        )
+
+        val pendingIntent = NavDeepLinkBuilder(requireContext())
+            .setGraph(R.navigation.main_nav_graph)
+            .setDestination(R.id.repo_detail)
+            .setArguments(bundleOf("repo" to repo))
+            .createPendingIntent()
+
+        builder.setContentIntent(pendingIntent)
+        builder.setAutoCancel(true)
+
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        NotificationManagerCompat.from(requireContext()).notify(
+            repo.name.hashCode(), builder.build()
+        )
     }
 
     /**
